@@ -71,7 +71,7 @@ void clearScreen() {
   {
     for(int y=0;y<8;y++)
     {
-      screen[x][y] = 0;
+      screen[x][y] = false;
     }
   }
 }
@@ -80,14 +80,42 @@ void printScreen()
 {
   for(int i=0;i<8;i++)
   {
-    lc.setRow(0,i,boolean_to_decimal(screen[i]));
+    lc.setRow(0,i,boolToDecimal(screen[i]));
   }
 }
 
-byte boolean_to_decimal(bool bol[]){
-  int somme=0;
-  for (int i = 0; i<8; i++){
-    somme += bol[i]*(1 << (7-i));
+int randomApplePosition() {
+  int openPositions = 0;
+  for (int x = 0; x < 8; x++)
+  {
+    for (int y = 0; y < 8; y++)
+    {
+      if (!screen[x][y])
+        openPositions++;
+    }
   }
-  return (byte)somme;
+  int position = random(0,openPositions-1);
+  int i = 0;
+  for (int x = 0; x < 8; x++)
+  {
+    for (int y = 0; y < 8; y++)
+    {
+      if (!screen[x][y])
+      {
+        if (i == position)
+          return y*8+x;
+        i++;
+      }
+    }
+  }
+  return 0;
+}
+
+byte boolToDecimal(bool row[]){
+  int sum=0;
+  for (int i = 0; i<8; i++)
+  {
+    sum += row[i]*(1 << (7-i));
+  }
+  return (byte)sum;
 }
