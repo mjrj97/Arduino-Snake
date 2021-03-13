@@ -14,6 +14,13 @@ bool screen[8][8];
 int x = 0;
 int y = 0;
 
+int joystickX = 0;
+int joystickY = 0;
+enum direction { north, east, west, south };
+direction moveDir = north;
+
+long lastMillis = 0;
+
 void setup(){
   Serial.begin(9600);
 
@@ -31,24 +38,23 @@ void setup(){
   printScreen();
 }
 
-void loop(){ 
-  int newX = x;
-  int newY = y;
+void loop(){
+  long currentMillis = millis();
   
-  if (analogRead(X_pin) <= 10)
-    newX--;
-  if (analogRead(X_pin) >= 1000)
-    newX++;
-  if (analogRead(Y_pin) <= 10)
-    newY--;
-  if (analogRead(Y_pin) >= 1000)
-    newY++;
+  joystickX = analogRead(X_pin);
+  joystickY = analogRead(Y_pin);
+  moveDir = getDirection();
+  
+  if(currentMillis - lastMillis > 1000){
+    execute();
+    
+    lastMillis = currentMillis;
+  }
+}
 
-  moveDot(newX, newY);
-
+void execute() {
   printScreen();
-
-  delay(500);
+  Serial.print(moveDir);
 }
 
 void moveDot (int newX, int newY) {
@@ -118,4 +124,19 @@ byte boolToDecimal(bool row[]){
     sum += row[i]*(1 << (7-i));
   }
   return (byte)sum;
+}
+
+enum direction getDirection() {
+  direction dir = moveDir;
+
+  if (joystickX <= 100)
+    dir = north;
+  else if (joystickX >= 900)
+    dir = south;
+  else if (joystickY <= 100)
+    dir = east;
+  else if (joystickY >= 900)
+    dir = west;
+
+  return dir;
 }
