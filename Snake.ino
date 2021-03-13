@@ -53,23 +53,28 @@ void loop(){
 }
 
 void execute() {
+  moveDot(moveDir);
   printScreen();
-  Serial.print(moveDir);
+  Serial.println("Direction: " + String(moveDir) + " x:" + String(x) + " y:" + String(y));
 }
 
-void moveDot (int newX, int newY) {
+void moveDot (direction Direction) {
   screen[x][y] = false;
-  if (newX > 7)
-    newX = 0;
-  if (newX < 0)
-    newX = 7;
-  if (newY > 7)
-    newY = 0;
-  if (newY < 0)
-    newY = 7;
-  screen[newX][newY] = true;
-  x = newX;
-  y = newY;
+  if (Direction == north)
+    x++;
+  else if (Direction == east)
+    y++;
+  else if (Direction == south)
+    x--;
+  else if (Direction == west)
+    y--;
+  x = x%8;
+  y = y%8;
+  if (x < 0)
+    x = x + 8;
+  if (y < 0)
+    y = y + 8;
+  screen[x][y] = true;
 }
 
 void clearScreen() {
