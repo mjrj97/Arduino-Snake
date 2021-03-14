@@ -9,15 +9,12 @@ const int CS =  3;
 const int CLK = 13;
 LedControl lc=LedControl(DIN,CLK,CS,0);
 
-bool screen[8][8];
-
-int x = 0;
-int y = 0;
+byte screen[8][8];
 
 int joystickX = 0;
 int joystickY = 0;
 enum direction { north, east, west, south };
-direction moveDir = north;
+direction moveDir = south;
 
 long lastMillis = 0;
 
@@ -35,6 +32,11 @@ void setup(){
 
   //Print array to LCD
   clearScreen();
+
+  screen[1][1] = 1;
+  screen[2][1] = 2;
+  screen[3][1] = 3;
+  
   printScreen();
 }
 
@@ -43,7 +45,6 @@ void loop(){
   
   joystickX = analogRead(X_pin);
   joystickY = analogRead(Y_pin);
-  moveDir = getDirection();
   
   if(currentMillis - lastMillis > 1000){
     execute();
@@ -53,28 +54,47 @@ void loop(){
 }
 
 void execute() {
+  moveDir = getDirection();
   moveDot(moveDir);
   printScreen();
-  Serial.println("Direction: " + String(moveDir) + " x:" + String(x) + " y:" + String(y));
 }
 
 void moveDot (direction Direction) {
-  screen[x][y] = false;
+  int x = 0;
+  int y = 0;
+  byte highestValue = 0;
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      if (screen[i][j] > 0)
+      {
+        if (screen[i][j] > highestValue)
+        {
+          highestValue = screen[i][j];
+          x = i;
+          y = j;
+        }
+        screen[i][j]--; 
+      }
+    }
+  }
+  
   if (Direction == north)
-    x++;
-  else if (Direction == east)
-    y++;
-  else if (Direction == south)
     x--;
-  else if (Direction == west)
+  else if (Direction == east)
     y--;
+  else if (Direction == south)
+    x++;
+  else if (Direction == west)
+    y++;
   x = x%8;
   y = y%8;
   if (x < 0)
     x = x + 8;
   if (y < 0)
     y = y + 8;
-  screen[x][y] = true;
+    
+  screen[x][y] = highestValue;
+  Serial.println("Direction: " + String(moveDir) + " x:" + String(x) + " y:" + String(y));
 }
 
 void clearScreen() {
@@ -82,7 +102,7 @@ void clearScreen() {
   {
     for(int y=0;y<8;y++)
     {
-      screen[x][y] = false;
+      screen[x][y] = 0;
     }
   }
 }
@@ -91,7 +111,7 @@ void printScreen()
 {
   for(int i=0;i<8;i++)
   {
-    lc.setRow(0,i,boolToDecimal(screen[i]));
+    lc.setRow(0,i,rowToByte(screen[i]));
   }
 }
 
@@ -101,7 +121,7 @@ int randomApplePosition() {
   {
     for (int y = 0; y < 8; y++)
     {
-      if (!screen[x][y])
+      if (screen[x][y] == 0)
         openPositions++;
     }
   }
@@ -111,7 +131,7 @@ int randomApplePosition() {
   {
     for (int y = 0; y < 8; y++)
     {
-      if (!screen[x][y])
+      if (screen[x][y] == 0)
       {
         if (i == position)
           return y*8+x;
@@ -122,13 +142,13 @@ int randomApplePosition() {
   return 0;
 }
 
-byte boolToDecimal(bool row[]){
-  int sum=0;
+byte rowToByte(byte row[]){
+  byte sum=0;
   for (int i = 0; i<8; i++)
   {
-    sum += row[i]*(1 << (7-i));
+    sum += (row[i] != 0)*(1 << (7-i));
   }
-  return (byte)sum;
+  return sum;
 }
 
 enum direction getDirection() {
