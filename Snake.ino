@@ -13,7 +13,7 @@ byte screen[8][8];
 
 int joystickX = 0;
 int joystickY = 0;
-enum direction { north, east, west, south };
+enum direction { none, north, east, west, south };
 direction moveDir = south;
 
 long lastMillis = 0;
@@ -45,6 +45,7 @@ void loop(){
   
   joystickX = analogRead(X_pin);
   joystickY = analogRead(Y_pin);
+  moveDir = getDirection();
   
   if(currentMillis - lastMillis > 1000){
     execute();
@@ -54,7 +55,6 @@ void loop(){
 }
 
 void execute() {
-  moveDir = getDirection();
   moveDot(moveDir);
   printScreen();
 }
@@ -94,7 +94,6 @@ void moveDot (direction Direction) {
     y = y + 8;
     
   screen[x][y] = highestValue;
-  Serial.println("Direction: " + String(moveDir) + " x:" + String(x) + " y:" + String(y));
 }
 
 void clearScreen() {
@@ -154,13 +153,13 @@ byte rowToByte(byte row[]){
 enum direction getDirection() {
   direction dir = moveDir;
 
-  if (joystickX <= 100)
+  if (joystickX <= 100 && moveDir != south)
     dir = north;
-  else if (joystickX >= 900)
+  else if (joystickX >= 900 && moveDir != north)
     dir = south;
-  else if (joystickY <= 100)
+  else if (joystickY <= 100 && moveDir != west)
     dir = east;
-  else if (joystickY >= 900)
+  else if (joystickY >= 900 && moveDir != east)
     dir = west;
 
   return dir;
