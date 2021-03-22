@@ -10,6 +10,7 @@ const int CLK = 13;
 LedControl lc=LedControl(DIN,CLK,CS,0);
 
 byte screen[8][8];
+byte floorValue = 1;
 
 int joystickX = 0;
 int joystickY = 0;
@@ -33,9 +34,11 @@ void setup(){
   //Print array to LCD
   clearScreen();
 
-  screen[1][1] = 1;
-  screen[2][1] = 2;
-  screen[3][1] = 3;
+  screen[1][1] = 1+floorValue;
+  screen[2][1] = 2+floorValue;
+  screen[3][1] = 3+floorValue;
+
+  screen[5][5] = 0;
   
   printScreen();
 }
@@ -65,7 +68,7 @@ void moveDot (direction Direction) {
   byte highestValue = 0;
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 8; j++) {
-      if (screen[i][j] > 0)
+      if (screen[i][j] > floorValue)
       {
         if (screen[i][j] > highestValue)
         {
@@ -73,7 +76,6 @@ void moveDot (direction Direction) {
           x = i;
           y = j;
         }
-        screen[i][j]--; 
       }
     }
   }
@@ -86,14 +88,38 @@ void moveDot (direction Direction) {
     x++;
   else if (Direction == west)
     y++;
+
   x = x%8;
   y = y%8;
+  
   if (x < 0)
     x = x + 8;
   if (y < 0)
     y = y + 8;
-    
-  screen[x][y] = highestValue;
+
+  Serial.print(x);
+  Serial.print(':');
+  Serial.print(y);
+  Serial.print(' ');
+  Serial.println(screen[x][y]);
+  
+  if (screen[x][y] == 0) {
+    screen[x][y] = highestValue + 1;
+    int positionApple = randomApplePosition();
+    x = positionApple - positionApple/8 * 8;
+    y = positionApple%8;
+    screen[x][y] = 0;
+  }
+  else
+  {
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 8; j++) {
+        if (screen[i][j] > floorValue)
+          screen[i][j]--;
+      }
+    }
+    screen[x][y] = highestValue;
+  }
 }
 
 void clearScreen() {
@@ -101,7 +127,7 @@ void clearScreen() {
   {
     for(int y=0;y<8;y++)
     {
-      screen[x][y] = 0;
+      screen[x][y] = floorValue;
     }
   }
 }
@@ -120,7 +146,7 @@ int randomApplePosition() {
   {
     for (int y = 0; y < 8; y++)
     {
-      if (screen[x][y] == 0)
+      if (screen[x][y] == floorValue)
         openPositions++;
     }
   }
@@ -130,7 +156,7 @@ int randomApplePosition() {
   {
     for (int y = 0; y < 8; y++)
     {
-      if (screen[x][y] == 0)
+      if (screen[x][y] == floorValue)
       {
         if (i == position)
           return y*8+x;
@@ -145,7 +171,7 @@ byte rowToByte(byte row[]){
   byte sum=0;
   for (int i = 0; i<8; i++)
   {
-    sum += (row[i] != 0)*(1 << (7-i));
+    sum += (row[i] != floorValue)*(1 << (7-i));
   }
   return sum;
 }
@@ -161,6 +187,5 @@ enum direction getDirection() {
     dir = east;
   else if (joystickY >= 900 && moveDir != east)
     dir = west;
-
   return dir;
 }
