@@ -7,6 +7,7 @@ const int Y_pin = 0;
 const int DIN = 11;
 const int CS =  3;
 const int CLK = 13;
+const int RES = 2;
 LedControl lc=LedControl(DIN,CLK,CS,0);
 
 byte screen[8][8];
@@ -31,6 +32,9 @@ void setup(){
   pinMode(SW_pin, INPUT);
   digitalWrite(SW_pin, HIGH);
 
+  //Set up reset
+  pinMode(RES, OUTPUT);
+
   //Print array to LCD
   clearScreen();
 
@@ -49,6 +53,9 @@ void loop(){
   joystickX = analogRead(X_pin);
   joystickY = analogRead(Y_pin);
   moveDir = getDirection();
+
+  if (analogRead(SW_pin) == 0)
+    reset();
   
   if(currentMillis - lastMillis > 1000){
     execute();
@@ -60,6 +67,10 @@ void loop(){
 void execute() {
   moveDot(moveDir);
   printScreen();
+}
+
+void reset() {
+  digitalWrite(RES, LOW);
 }
 
 void moveDot (direction Direction) {
@@ -96,12 +107,6 @@ void moveDot (direction Direction) {
     x = x + 8;
   if (y < 0)
     y = y + 8;
-
-  Serial.print(x);
-  Serial.print(':');
-  Serial.print(y);
-  Serial.print(' ');
-  Serial.println(screen[x][y]);
   
   if (screen[x][y] == 0) {
     screen[x][y] = highestValue + 1;
@@ -109,6 +114,9 @@ void moveDot (direction Direction) {
     x = positionApple - positionApple/8 * 8;
     y = positionApple%8;
     screen[x][y] = 0;
+  }
+  else if (screen[x][y] > floorValue) {
+    reset();
   }
   else
   {
